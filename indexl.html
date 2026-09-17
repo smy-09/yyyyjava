@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>酷狗音乐 · Web Player</title>
+<style>
+  :root{
+    --kg-blue:#1ec8ff;
+    --kg-blue-2:#1e8bff;
+    --kg-purple:#7b5cff;
+    --bg-0:#0e0f1a;
+    --bg-1:#161827;
+    --bg-2:#1f2236;
+    --bg-3:#272b45;
+    --text:#e8eaf6;
+    --text-dim:#9aa0c0;
+    --line:rgba(255,255,255,.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei",Segoe UI,Roboto,sans-serif;
+    background:var(--bg-0);
+    color:var(--text);
+    overflow:hidden;
+    user-select:none;
+  }
+
+  /* ---------- 动态背景层（可更换） ---------- */
+  .bg-layer{position:fixed;inset:0;z-index:0;background-size:cover;background-position:center;transition:background-image .4s ease}
+  .bg-layer::after{content:"";position:absolute;inset:0;
+    background:
+      radial-gradient(1200px 600px at 80% -10%,rgba(123,92,255,.22),transparent 60%),
+      radial-gradient(900px 500px at -10% 110%,rgba(30,200,255,.16),transparent 55%),
+      rgba(10,11,20,.62);
+  }
+
+  /* ---------- 登录页 ---------- */
+  .login-mask{
+    position:fixed;inset:0;z-index:100;display:grid;place-items:center;
+    background:radial-gradient(900px 600px at 50% 0%,rgba(123,92,255,.28),transparent 60%),
+               linear-gradient(180deg,#14162a,#0b0c16);
+  }
+  .login-mask.hide{display:none}
+  .login-card{
+    width:380px;padding:38px 34px 30px;border-radius:20px;
+    background:rgba(24,26,44,.86);border:1px solid rgba(255,255,255,.09);
+    box-shadow:0 30px 80px rgba(0,0,0,.55);
+  }
+  .login-card.shake{animation:shake .38s}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-9px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(4px)}}
+  .lg-brand{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:22px}
+  .lg-brand .mark{
+    width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:22px;
+    background:linear-gradient(135deg,var(--kg-blue),var(--kg-purple));box-shadow:0 8px 22px rgba(30,200,255,.35)
+  }
+  .lg-brand span{font-size:22px;font-weight:800;letter-spacing:.5px}
+  .lg-brand b{background:linear-gradient(135deg,var(--kg-blue),var(--kg-purple));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .login-card h1{font-size:19px;font-weight:500;text-align:center;margin-bottom:6px}
+  .login-sub{text-align:center;color:var(--text-dim);font-size:13px;margin-bottom:24px}
+  .lg-field{margin-bottom:14px}
+  .lg-field label{display:block;font-size:12px;color:var(--text-dim);margin-bottom:7px}
+  .lg-field input{
+    width:100%;height:44px;border-radius:11px;border:1px solid rgba(255,255,255,.10);
+    background:rgba(0,0,0,.25);color:var(--text);padding:0 14px;font-size:14px;outline:none;transition:.15s;
+  }
+  .lg-field input:focus{border-color:var(--kg-blue);background:rgba(0,0,0,.35)}
+  .lg-field input::placeholder{color:rgba(154,160,192,.5)}
+  .lg-err{height:18px;font-size:12px;color:#ff7b7b;margin:2px 0 6px;text-align:center}
+  .lg-btn{
+    width:100%;height:44px;border:none;border-radius:11px;cursor:pointer;
+    background:linear-gradient(135deg,var(--kg-blue),var(--kg-purple));
+    color:#fff;font-size:15px;font-weight:700;letter-spacing:2px;transition:.15s;
+  }
+  .lg-btn:hover{filter:brightness(1.08)}
+  .lg-btn:active{transform:translateY(1px)}
+  .lg-tip{margin-top:16px;text-align:center;font-size:12px;color:var(--text-dim)}
+  .lg-tip b{color:var(--kg-blue);font-weight:600}
+
+  /* ---------- 应用壳 ---------- */
+  .app{position:relative;z-index:1;display:flex;flex-direction:column;height:100vh}
+
+  .topbar{
+    height:60px;display:flex;align-items:center;gap:24px;flex:none;
+    padding:0 22px;background:rgba(20,22,38,.55);
+    backdrop-filter:blur(14px);border-bottom:1px solid var(--line);
+  }
+  .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;letter-spacing:.5px}
+  .logo .mark{
+    width:34px;height:34px;border-radius:10px;
+    background:linear-gradient(135deg,var(--kg-blue),var(--kg-purple));
+    display:grid;place-items:center;font-size:18px;box-shadow:0 6px 18px rgba(30,200,255,.35);
+  }
+  .logo b{background:linear-gradient(135deg,var(--kg-blue),var(--kg-purple));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .search{flex:1;max-width:520px;position:relative}
+  .search input{
+    width:100%;height:38px;border-radius:20px;border:1px solid var(--line);
+    background:rgba(31,34,54,.8);color:var(--text);padding:0 16px 0 40px;font-size:14px;outline:none;
+  }
+  .search input:focus{border-color:var(--kg-blue)}
+  .search::before{content:"🔍";position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:14px;opacity:.6}
+  .top-actions{display:flex;align-items:center;gap:14px;color:var(--text-dim);font-size:13px}
+  .top-actions .nick{color:var(--text);font-size:13px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ava{
+    width:34px;height:34px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:16px;
+    cursor:pointer;color:#fff;background:linear-gradient(135deg,#ff8a5b,#ff5b8a);
+    background-size:cover;background-position:center;border:1px solid rgba(255,255,255,.14);
+  }
+  .ava:hover{box-shadow:0 0 0 2px rgba(30,200,255,.5)}
+  .link{cursor:pointer;transition:.15s}
+  .link:hover{color:var(--kg-blue)}
+
+  .layout{flex:1;display:flex;min-height:0}
+  .sidebar{
+    width:210px;flex:none;background:rgba(16,18,30,.45);border-right:1px solid var(--line);
+    padding:18px 12px;display:flex;flex-direction:column;gap:6px;backdrop-filter:blur(10px);
+  }
+  .nav-group{font-size:12px;color:var(--text-dim);padding:14px 12px 6px;letter-spacing:1px}
+  .nav-item{
+    display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;
+    color:var(--text-dim);cursor:pointer;font-size:14px;transition:.15s;
+  }
+  .nav-item:hover{background:var(--bg-2);color:var(--text)}
+  .nav-item.active{background:linear-gradient(135deg,rgba(30,200,255,.18),rgba(123,92,255,.18));color:#fff}
+  .nav-item .ic{width:20px;text-align:center}
+  .nav-item .badge{margin-left:auto;font-size:11px;background:rgba(30,200,255,.18);color:var(--kg-blue);padding:1px 7px;border-radius:8px}
+  .nav-spacer{flex:1}
+
+  .content{flex:1;overflow:auto;padding:22px 26px}
+  .view{display:none}
+  .view.active{display:block}
+
+  .hero{
+    height:190px;border-radius:18px;padding:26px;position:relative;overflow:hidden;
+    background:linear-gradient(120deg,rgba(30,139,255,.38),rgba(123,92,255,.38));
+    border:1px solid var(--line);margin-bottom:24px;backdrop-filter:blur(6px);
+  }
+  .hero::after{content:"";position:absolute;right:-40px;top:-40px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.25),transparent 70%)}
+  .hero h2{font-size:26px;margin-bottom:8px}
+  .hero p{color:var(--text-dim);font-size:14px;max-width:60%;position:relative;z-index:1}
+  .hero .play-hero{
+    margin-top:18px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;position:relative;z-index:1;
+    background:#fff;color:#111;border:none;border-radius:24px;padding:10px 22px;font-weight:700;font-size:14px;
+  }
+  .section-title{font-size:16px;font-weight:700;margin:6px 2px 14px;display:flex;justify-content:space-between;align-items:center}
+  .section-title a{color:var(--text-dim);font-size:13px;cursor:pointer}
+  .section-title a:hover{color:var(--kg-blue)}
+
+  .songlist{background:rgba(20,22,38,.4);border:1px solid var(--line);border-radius:14px;overflow:hidden;backdrop-filter:blur(8px)}
+  .sl-head,.sl-row{display:grid;grid-template-columns:54px 1fr 140px 150px 70px 46px;align-items:center;gap:8px;padding:12px 18px}
+  .sl-head{color:var(--text-dim);font-size:12px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(22,24,39,.96)}
+  .sl-row{border-bottom:1px solid var(--line);cursor:pointer;transition:.12s;font-size:14px}
+  .sl-row:last-child{border-bottom:none}
+  .sl-row:hover{background:rgba(31,34,54,.7)}
+  .sl-row.playing{background:linear-gradient(90deg,rgba(30,200,255,.10),transparent)}
+  .sl-row.playing .title{color:var(--kg-blue)}
+  .idx{color:var(--text-dim);font-variant-numeric:tabular-nums}
+  .sl-row.playing .idx{color:var(--kg-blue)}
+  .title-cell{display:flex;align-items:center;gap:12px;min-width:0}
+  .cover{width:42px;height:42px;border-radius:8px;flex:none;box-shadow:0 4px 12px rgba(0,0,0,.35)}
+  .title-cell .meta{min-width:0}
+  .title{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .artist,.album{color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dur{color:var(--text-dim);font-variant-numeric:tabular-nums;text-align:right}
+  .heart{text-align:center;font-size:15px;opacity:.35;transition:.15s}
+  .heart:hover{opacity:.8}
+  .heart.on{opacity:1;color:#ff5b8a}
+  .empty{padding:40px;text-align:center;color:var(--text-dim);font-size:14px}
+
+  /* ---------- 个人资料 / 外观卡片 ---------- */
+  .card{
+    background:rgba(20,22,38,.5);border:1px solid var(--line);border-radius:16px;
+    padding:22px 24px;margin-bottom:18px;backdrop-filter:blur(10px);
+  }
+  .card h3{font-size:15px;font-weight:600;margin-bottom:4px}
+  .card .hint{font-size:12px;color:var(--text-dim);margin-bottom:18px}
+  .pf-top{display:flex;align-items:center;gap:20px;padding-bottom:20px;border-bottom:1px solid var(--line);margin-bottom:20px}
+  .pf-ava{width:84px;height:84px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:38px;color:#fff;
+    background:linear-gradient(135deg,#ff8a5b,#ff5b8a);background-size:cover;background-position:center;
+    box-shadow:0 8px 24px rgba(0,0,0,.4)}
+  .pf-top .who b{font-size:20px}
+  .pf-top .who p{color:var(--text-dim);font-size:13px;margin-top:6px;max-width:420px}
+  .pf-top .who .acct{font-size:12px;color:var(--text-dim);margin-top:8px}
+  .pf-top .who .acct span{color:var(--kg-blue)}
+  .stats{display:flex;gap:26px;margin-left:auto}
+  .stats div{text-align:center}
+  .stats .n{font-size:20px;font-weight:700}
+  .stats .l{font-size:12px;color:var(--text-dim);margin-top:2px}
+
+  .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
+  .fg label{display:block;font-size:12px;color:var(--text-dim);margin-bottom:7px}
+  .fg input,.fg select,.fg textarea{
+    width:100%;height:40px;border-radius:10px;border:1px solid rgba(255,255,255,.10);
+    background:rgba(0,0,0,.24);color:var(--text);padding:0 12px;font-size:14px;outline:none;transition:.15s;font-family:inherit;
+  }
+  .fg textarea{height:76px;padding:10px 12px;resize:vertical;line-height:1.5}
+  .fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--kg-blue)}
+  .fg select option{background:#1f2236}
+  .row-actions{display:flex;gap:12px;margin-top:22px}
+  .btn-p{
+    height:40px;padding:0 26px;border:none;border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;
+    background:linear-gradient(135deg,var(--kg-blue),var(--kg-purple));color:#fff;transition:.15s;
+  }
+  .btn-p:hover{filter:brightness(1.08)}
+  .btn-g{
+    height:40px;padding:0 22px;border-radius:10px;cursor:pointer;font-size:14px;
+    background:transparent;border:1px solid rgba(255,255,255,.16);color:var(--text-dim);transition:.15s;
+  }
+  .btn-g:hover{color:var(--text);border-color:rgba(255,255,255,.3)}
+
+  .pick-row{display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+  .pick-preview{
+    width:110px;height:110px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:44px;color:#fff;
+    background:linear-gradient(135deg,#ff8a5b,#ff5b8a);background-size:cover;background-position:center;
+    border:2px solid rgba(255,255,255,.14)
+  }
+  .pick-preview.square{border-radius:14px;width:180px;height:100px;font-size:30px}
+  .picks{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}
+  .pick{
+    width:52px;height:52px;border-radius:50%;cursor:pointer;display:grid;place-items:center;font-size:22px;color:#fff;
+    background-size:cover;background-position:center;transition:.15s;border:2px solid transparent;
+  }
+  .pick:hover{transform:translateY(-2px)}
+  .pick.on{border-color:var(--kg-blue);box-shadow:0 0 0 3px rgba(30,200,255,.2)}
+  .pick.wide{width:86px;height:52px;border-radius:10px}
+  .upload-wrap{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  input[type=file]{display:none}
+
+  /* ---------- 正在播放 ---------- */
+  .nowplaying{width:300px;flex:none;background:rgba(16,18,30,.45);border-left:1px solid var(--line);padding:24px;display:flex;flex-direction:column;align-items:center;backdrop-filter:blur(10px)}
+  .disc{
+    width:200px;height:200px;border-radius:50%;margin-top:10px;position:relative;flex:none;
+    background:conic-gradient(from 0deg,#2a2d44,#11131f,#2a2d44);
+    display:grid;place-items:center;box-shadow:0 10px 40px rgba(0,0,0,.5);
+    animation:spin 18s linear infinite;animation-play-state:paused;
+  }
+  .disc.playing{animation-play-state:running}
+  .disc .cover{width:120px;height:120px;border-radius:50%;box-shadow:0 0 0 6px rgba(255,255,255,.08)}
+  .disc::after{content:"";position:absolute;width:18px;height:18px;border-radius:50%;background:var(--bg-0);box-shadow:inset 0 0 0 3px #333}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .np-title{margin-top:20px;font-size:18px;font-weight:700;text-align:center}
+  .np-artist{color:var(--text-dim);font-size:13px;margin-top:6px;text-align:center}
+  .np-ops{display:flex;align-items:center;gap:18px;margin:14px 0 4px;color:var(--text-dim);font-size:20px}
+  .np-ops span{cursor:pointer;transition:.15s}
+  .np-ops span:hover{color:var(--kg-blue)}
+  .np-ops span.on{color:#ff5b8a}
+  .lyrics{margin-top:10px;flex:1;width:100%;overflow:auto;text-align:center;color:var(--text-dim);font-size:13px;line-height:2}
+  .lyrics .ln{transition:.2s}
+  .lyrics .ln.active{color:var(--kg-blue);font-weight:700}
+
+  /* ---------- 播放条 ---------- */
+  .player{height:84px;flex:none;background:rgba(16,18,30,.8);backdrop-filter:blur(14px);border-top:1px solid var(--line);
+    display:grid;grid-template-columns:280px 1fr 240px;align-items:center;padding:0 20px;gap:16px}
+  .p-left{display:flex;align-items:center;gap:12px;min-width:0}
+  .p-left .cover{width:50px;height:50px;border-radius:8px}
+  .p-left .meta{min-width:0}
+  .p-left .t{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .p-left .a{font-size:12px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .p-center{display:flex;flex-direction:column;align-items:center;gap:8px}
+  .controls{display:flex;align-items:center;gap:18px}
+  .btn{background:none;border:none;color:var(--text);cursor:pointer;font-size:18px;opacity:.85;transition:.15s}
+  .btn:hover{opacity:1;color:var(--kg-blue)}
+  .btn.play{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--kg-blue),var(--kg-purple));color:#fff;display:grid;place-items:center;font-size:20px;box-shadow:0 6px 18px rgba(30,200,255,.4)}
+  .btn.play:hover{color:#fff;transform:scale(1.05)}
+  .progress{display:flex;align-items:center;gap:10px;width:100%;max-width:560px}
+  .progress .time{font-size:11px;color:var(--text-dim);font-variant-numeric:tabular-nums;width:38px;text-align:center}
+  .bar{flex:1;height:5px;border-radius:3px;background:var(--bg-3);position:relative;cursor:pointer}
+  .bar .fill{position:absolute;left:0;top:0;height:100%;border-radius:3px;background:linear-gradient(90deg,var(--kg-blue),var(--kg-purple));width:0%}
+  .bar .knob{position:absolute;top:50%;transform:translate(-50%,-50%);width:12px;height:12px;border-radius:50%;background:#fff;left:0%;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+  .p-right{display:flex;align-items:center;justify-content:flex-end;gap:14px;color:var(--text-dim)}
+  .vol{display:flex;align-items:center;gap:8px}
+  .vol .bar{width:90px}
+  .mode{cursor:pointer;font-size:13px;min-width:54px;text-align:center}
+  .mode:hover{color:var(--kg-blue)}
+
+  /* ---------- Toast ---------- */
+  .toast{
+    position:fixed;left:50%;bottom:110px;transform:translateX(-50%) translateY(14px);z-index:200;
+    background:rgba(30,33,54,.96);border:1px solid rgba(255,255,255,.12);color:var(--text);
+    padding:11px 22px;border-radius:12px;font-size:13px;opacity:0;pointer-events:none;transition:.25s;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  ::-webkit-scrollbar{width:8px;height:8px}
+  ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:4px}
+
+  @media (max-width:1180px){ .nowplaying{display:none} }
+  @media (max-width:820px){ .sidebar{width:64px;padding:18px 8px} .nav-item span:not(.ic){display:none} .sl-head,.sl-row{grid-template-columns:44px 1fr 70px 40px} .album,.artist{display:none} }
+</style>
+</head>
+<body>
+
+<div class="bg-layer" id="bgLayer"></div>
+
+<!-- ================= 登录界面 ================= -->
+<div class="login-mask" id="loginMask">
+  <div class="login-card" id="loginCard">
+    <div class="lg-brand"><span class="mark">🎵</span><span><b>酷狗</b>音乐</span></div>
+    <h1>欢迎回来</h1>
+    <p class="login-sub">登录后可使用个人资料、自定义头像与背景</p>
+    <div class="lg-field">
+      <label>账号</label>
+      <input id="lgUser" autocomplete="off" placeholder="请输入账号" value="123456" />
+    </div>
+    <div class="lg-field">
+      <label>密码</label>
+      <input id="lgPwd" type="password" autocomplete="off" placeholder="请输入密码" value="123456" />
+    </div>
+    <div class="lg-err" id="lgErr"></div>
+    <button class="lg-btn" id="lgBtn">登 录</button>
+    <div class="lg-tip">演示账号 <b>123456</b>　密码 <b>123456</b>（已自动填好）</div>
+  </div>
+</div>
+
+<!-- ================= 主应用 ================= -->
+<div class="app">
+  <header class="topbar">
+    <div class="logo"><span class="mark">🎵</span><span><b>酷狗</b>音乐</span></div>
+    <div class="search"><input id="search" placeholder="搜索歌曲、歌手、专辑…" /></div>
+    <div class="top-actions">
+      <span class="link" data-view="vip">开通VIP</span>
+      <span class="nick" id="topNick">音乐旅人</span>
+      <div class="ava" id="topAva" title="个人中心">U</div>
+      <span class="link" id="logout">退出</span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="nav-group">音乐馆</div>
+      <div class="nav-item active" data-view="home"><span class="ic">🏠</span><span>推荐</span></div>
+      <div class="nav-item" data-view="fav"><span class="ic">❤️</span><span>我喜欢</span><span class="badge" id="favCount">0</span></div>
+      <div class="nav-group">我的</div>
+      <div class="nav-item" data-view="profile"><span class="ic">👤</span><span>个人资料</span></div>
+      <div class="nav-item" data-view="theme"><span class="ic">🎨</span><span>外观设置</span></div>
+      <div class="nav-spacer"></div>
+      <div class="nav-item" id="navLogout"><span class="ic">⏻</span><span>退出登录</span></div>
+    </aside>
+
+    <main class="content">
+
+      <!-- 推荐 -->
+      <section class="view active" id="view-home">
+        <section class="hero">
+          <h2 id="heroTitle">每日推荐 · 听见好时光</h2>
+          <p id="heroDesc">登录后可修改个人资料、更换头像与背景，点击播放即可体验完整播放器交互。</p>
+          <button class="play-hero" id="playHero">▶ 播放全部</button>
+        </section>
+        <div class="section-title"><span>推荐歌曲</span><a id="shuffleAll">随机播放</a></div>
+        <div class="songlist">
+          <div class="sl-head">
+            <div>序号</div><div>音乐标题</div><div>歌手</div><div>专辑</div><div style="text-align:right">时长</div><div></div>
+          </div>
+          <div id="songs"></div>
+        </div>
+      </section>
+
+      <!-- 我喜欢 -->
+      <section class="view" id="view-fav">
+        <div class="section-title"><span>我喜欢的音乐</span><a id="playFav">▶ 播放全部</a></div>
+        <div class="songlist">
+          <div class="sl-head">
+            <div>序号</div><div>音乐标题</div><div>歌手</div><div>专辑</div><div style="text-align:right">时长</div><div></div>
+          </div>
+          <div id="favList"></div>
+        </div>
+      </section>
+
+      <!-- 个人资料 -->
+      <section class="view" id="view-profile">
+        <div class="card">
+          <div class="pf-top">
+            <div class="pf-ava" id="pfAva">U</div>
+            <div class="who">
+              <b id="pfName">音乐旅人</b>
+              <p id="pfDesc">今天也想听点好听的 ♪</p>
+              <div class="acct">账号：<span>123456</span></div>
+            </div>
+            <div class="stats">
+              <div><div class="n" id="stFav">0</div><div class="l">收藏</div></div>
+              <div><div class="n" id="stPlay">0</div><div class="l">播放次数</div></div>
+            </div>
+          </div>
+          <h3>基本资料</h3>
+          <p class="hint">修改后点击保存，资料会保留在浏览器中</p>
+          <div class="form-grid">
+            <div class="fg"><label>昵称</label><input id="fNick" maxlength="20" placeholder="给自己起个名字" /></div>
+            <div class="fg"><label>性别</label>
+              <select id="fGender"><option value="secret">保密</option><option value="male">男</option><option value="female">女</option></select>
+            </div>
+            <div class="fg"><label>生日</label><input id="fBirth" type="date" /></div>
+            <div class="fg"><label>所在城市</label><input id="fCity" maxlength="20" placeholder="例如：深圳" /></div>
+            <div class="fg"><label>邮箱</label><input id="fMail" maxlength="40" placeholder="name@example.com" /></div>
+            <div class="fg"><label>注册账号</label><input value="123456" disabled style="opacity:.55" /></div>
+            <div class="fg" style="grid-column:1/-1"><label>个性签名</label><textarea id="fDesc" maxlength="60" placeholder="写点什么展示在个人主页…"></textarea></div>
+          </div>
+          <div class="row-actions">
+            <button class="btn-p" id="saveProfile">保存资料</button>
+            <button class="btn-g" id="resetProfile">恢复默认</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 外观设置 -->
+      <section class="view" id="view-theme">
+        <div class="card">
+          <h3>更换头像</h3>
+          <p class="hint">选择预设头像，或上传本地图片（自动压缩裁剪为正方形）</p>
+          <div class="pick-row">
+            <div class="pick-preview" id="avaPreview">U</div>
+            <div style="flex:1;min-width:240px">
+              <div class="picks" id="avaPicks"></div>
+              <div class="upload-wrap">
+                <button class="btn-g" id="avaUploadBtn">上传头像</button>
+                <input type="file" id="avaFile" accept="image/*" />
+                <button class="btn-g" id="avaClear">使用默认</button>
+                <span style="font-size:12px;color:var(--text-dim)">支持 JPG / PNG / GIF，建议 ≤ 2MB</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>更换背景</h3>
+          <p class="hint">选择预设主题背景，或上传本地图片铺满整个页面</p>
+          <div class="pick-row">
+            <div class="pick-preview square" id="bgPreview">背景</div>
+            <div style="flex:1;min-width:240px">
+              <div class="picks" id="bgPicks"></div>
+              <div class="upload-wrap">
+                <button class="btn-g" id="bgUploadBtn">上传背景</button>
+                <input type="file" id="bgFile" accept="image/*" />
+                <button class="btn-g" id="bgClear">恢复默认背景</button>
+                <span style="font-size:12px;color:var(--text-dim)">建议 16:9 横图，宽度 ≥ 1280px</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <aside class="nowplaying">
+      <div class="disc" id="disc"><div class="cover" id="npCover"></div></div>
+      <div class="np-title" id="npTitle">未在播放</div>
+      <div class="np-artist" id="npArtist">选择一首歌开始吧</div>
+      <div class="np-ops">
+        <span id="npLike" title="喜欢">♡</span>
+        <span id="npPrev" title="上一首">⏮</span>
+        <span id="npNext" title="下一首">⏭</span>
+      </div>
+      <div class="lyrics" id="lyrics"><div class="ln">歌词加载中…</div></div>
+    </aside>
+  </div>
+
+  <footer class="player">
+    <div class="p-left">
+      <div class="cover" id="pCover"></div>
+      <div class="meta">
+        <div class="t" id="pTitle">—</div>
+        <div class="a" id="pArtist">—</div>
+      </div>
+    </div>
+    <div class="p-center">
+      <div class="controls">
+        <button class="btn" id="prev" title="上一首">⏮</button>
+        <button class="btn play" id="toggle" title="播放/暂停">▶</button>
+        <button class="btn" id="next" title="下一首">⏭</button>
+      </div>
+      <div class="progress">
+        <span class="time" id="cur">0:00</span>
+        <div class="bar" id="seek"><div class="fill" id="seekFill"></div><div class="knob" id="seekKnob"></div></div>
+        <span class="time" id="dur">0:00</span>
+      </div>
+    </div>
+    <div class="p-right">
+      <div class="mode" id="mode" title="播放模式">顺序</div>
+      <div class="vol">🔊
+        <div class="bar" id="vol"><div class="fill" id="volFill" style="width:70%"></div><div class="knob" id="volKnob" style="left:70%"></div></div>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<audio id="audio"></audio>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= 工具 ================= */
+const $ = id => document.getElementById(id);
+const ACCOUNT = '123456', PASSWORD = '123456';
+let toastTimer = null;
+function toast(msg){
+  const t = $('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2000);
+}
+
+/* ================= 本地存储 ================= */
+const STORE_KEY = 'kg_player_profile_v1';
+const DEFAULT_PROFILE = {
+  nickname:'音乐旅人', desc:'今天也想听点好听的 ♪',
+  gender:'secret', birthday:'', city:'', email:'',
+  avatar:'', bg:'', fav:[], playCount:0
+};
+const store = {
+  read(){
+    try{ return Object.assign({}, DEFAULT_PROFILE, JSON.parse(localStorage.getItem(STORE_KEY) || '{}')); }
+    catch(e){ return Object.assign({}, DEFAULT_PROFILE); }
+  },
+  write(v){
+    try{ localStorage.setItem(STORE_KEY, JSON.stringify(v)); }
+    catch(e){ toast('浏览器存储不可用，本次修改仅在当前页面有效'); }
+  }
+};
+let profile = store.read();
+function save(){ store.write(profile); }
+
+/* ================= 登录 ================= */
+function enterApp(){
+  $('loginMask').classList.add('hide');
+  try{ sessionStorage.setItem('kg_logged','1'); }catch(e){}
+  applyAll();
+  renderList($('search').value.trim());
+  renderFav();
+}
+function tryLogin(){
+  const u = $('lgUser').value.trim(), p = $('lgPwd').value;
+  if(u === ACCOUNT && p === PASSWORD){ $('lgErr').textContent=''; enterApp(); toast('登录成功，欢迎回来'); }
+  else{
+    $('lgErr').textContent = '账号或密码不正确';
+    const c = $('loginCard');
+    c.classList.remove('shake'); void c.offsetWidth; c.classList.add('shake');
+    $('lgPwd').select();
+  }
+}
+$('lgBtn').onclick = tryLogin;
+['lgUser','lgPwd'].forEach(id=>{ $(id).addEventListener('keydown', e=>{ if(e.key==='Enter') tryLogin(); }); });
+function logout(){
+  try{ sessionStorage.removeItem('kg_logged'); }catch(e){}
+  $('loginMask').classList.remove('hide');
+  $('lgPwd').value = PASSWORD;
+  toast('已退出登录');
+}
+$('logout').onclick = logout;
+$('navLogout').onclick = logout;
+
+/* ================= 头像 / 背景预设 ================= */
+const AVATARS = [
+  {id:'a1', css:'linear-gradient(135deg,#ff8a5b,#ff5b8a)', t:'🎧'},
+  {id:'a2', css:'linear-gradient(135deg,#1ec8ff,#7b5cff)', t:'🎤'},
+  {id:'a3', css:'linear-gradient(135deg,#22d3a6,#1e8bff)', t:'🎹'},
+  {id:'a4', css:'linear-gradient(135deg,#f6c453,#ff7e5f)', t:'🎸'},
+  {id:'a5', css:'linear-gradient(135deg,#a06bff,#ff6bcb)', t:'🎺'},
+  {id:'a6', css:'linear-gradient(135deg,#5be0a0,#1ec8ff)', t:'🥁'},
+  {id:'a7', css:'linear-gradient(135deg,#ff5b8a,#ffb15b)', t:'🎼'},
+  {id:'a8', css:'linear-gradient(135deg,#8892ff,#3ad1ff)', t:'🎷'}
+];
+const BGS = [
+  {id:'b0', name:'极光', css:'linear-gradient(135deg,#0f2027,#203a43,#2c5364)'},
+  {id:'b1', name:'星夜紫', css:'linear-gradient(135deg,#2b1055,#7597de)'},
+  {id:'b2', name:'落日橙', css:'linear-gradient(135deg,#ff512f,#dd2476)'},
+  {id:'b3', name:'深海蓝', css:'linear-gradient(135deg,#000428,#004e92)'},
+  {id:'b4', name:'森林绿', css:'linear-gradient(135deg,#134e5e,#71b280)'},
+  {id:'b5', name:'樱花粉', css:'linear-gradient(135deg,#ee9ca7,#ffdde1)'}
+];
+const DEFAULT_BG = 'radial-gradient(1200px 600px at 80% -10%,rgba(123,92,255,.25),transparent 60%),radial-gradient(900px 500px at -10% 110%,rgba(30,200,255,.18),transparent 55%),#0e0f1a';
+
+function paintAvatar(el, size){
+  if(!el) return;
+  const a = profile.avatar;
+  if(a && a.indexOf('data:') === 0){
+    el.style.background = 'url(' + a + ') center/cover no-repeat';
+    el.textContent = '';
+    el.style.fontSize = '';
+  }else{
+    const p = AVATARS.find(x=>x.id === a) || AVATARS[0];
+    el.style.background = p.css;
+    el.textContent = p.t;
+    el.style.fontSize = (size || 16) + 'px';
+  }
+}
+function applyAvatar(){
+  paintAvatar($('topAva'), 16);
+  paintAvatar($('pfAva'), 38);
+  paintAvatar($('avaPreview'), 44);
+  const pick = AVATARS.findIndex(x=>x.id === profile.avatar);
+  [...$('avaPicks').children].forEach((el,i)=>el.classList.toggle('on', i === pick && !String(profile.avatar||'').startsWith('data:')));
+}
+function applyBg(){
+  const b = profile.bg;
+  if(b && b.indexOf('data:') === 0) $('bgLayer').style.background = 'url(' + b + ') center/cover no-repeat';
+  else if(b){ const p = BGS.find(x=>x.id === b); $('bgLayer').style.background = p ? p.css : DEFAULT_BG; }
+  else $('bgLayer').style.background = DEFAULT_BG;
+
+  $('bgPreview').style.background = $('bgLayer').style.background || DEFAULT_BG;
+  [...$('bgPicks').children].forEach((el,i)=>el.classList.toggle('on', BGS[i].id === profile.bg));
+}
+function applyProfile(){
+  $('topNick').textContent = profile.nickname;
+  $('pfName').textContent   = profile.nickname;
+  $('pfDesc').textContent   = profile.desc || '这个人很懒，什么都没写';
+  $('stFav').textContent    = profile.fav.length;
+  $('stPlay').textContent   = profile.playCount;
+  $('fNick').value  = profile.nickname;
+  $('fDesc').value  = profile.desc;
+  $('fGender').value= profile.gender;
+  $('fBirth').value = profile.birthday;
+  $('fCity').value  = profile.city;
+  $('fMail').value  = profile.email;
+  $('heroTitle').textContent = profile.nickname + ' · 每日推荐';
+}
+function applyAll(){ applyProfile(); applyAvatar(); applyBg(); }
+
+/* 渲染预设选项 */
+AVATARS.forEach((a,i)=>{
+  const d = document.createElement('div');
+  d.className = 'pick'; d.style.background = a.css; d.textContent = a.t; d.title = '预设 ' + (i+1);
+  d.onclick = ()=>{ profile.avatar = a.id; save(); applyAvatar(); toast('头像已更换'); };
+  $('avaPicks').appendChild(d);
+});
+BGS.forEach(b=>{
+  const d = document.createElement('div');
+  d.className = 'pick wide'; d.style.background = b.css; d.textContent = b.name; d.title = b.name;
+  d.onclick = ()=>{ profile.bg = b.id; save(); applyBg(); toast('背景已更换为「' + b.name + '」'); };
+  $('bgPicks').appendChild(d);
+});
+
+/* ================= 图片上传（压缩后存 base64） ================= */
+function pickImage(file, max, cb){
+  if(!file) return;
+  if(file.type.indexOf('image/') !== 0){ toast('请选择图片文件'); return; }
+  if(file.size > 8 * 1024 * 1024){ toast('图片过大，请选择 8MB 以内的图片'); return; }
+  const fr = new FileReader();
+  fr.onload = e => {
+    const img = new Image();
+    img.onload = ()=>{
+      const scale = Math.min(1, max / Math.max(img.width, img.height));
+      const w = Math.max(1, Math.round(img.width * scale));
+      const h = Math.max(1, Math.round(img.height * scale));
+      const cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      const ctx = cv.getContext('2d');
+      ctx.fillStyle = '#0e0f1a'; ctx.fillRect(0,0,w,h);
+      ctx.drawImage(img, 0, 0, w, h);
+      cb(cv.toDataURL('image/jpeg', 0.85));
+    };
+    img.onerror = ()=>toast('图片解析失败，换一张试试');
+    img.src = e.target.result;
+  };
+  fr.onerror = ()=>toast('读取文件失败');
+  fr.readAsDataURL(file);
+}
+$('avaUploadBtn').onclick = ()=>$('avaFile').click();
+$('avaFile').onchange = e => pickImage(e.target.files[0], 256, data=>{
+  profile.avatar = data; save(); applyAvatar(); toast('头像已更新');
+  e.target.value = '';
+});
+$('avaClear').onclick = ()=>{ profile.avatar = ''; save(); applyAvatar(); toast('已恢复默认头像'); };
+
+$('bgUploadBtn').onclick = ()=>$('bgFile').click();
+$('bgFile').onchange = e => pickImage(e.target.files[0], 1440, data=>{
+  profile.bg = data; save(); applyBg(); toast('背景已更新');
+  e.target.value = '';
+});
+$('bgClear').onclick = ()=>{ profile.bg = ''; save(); applyBg(); toast('已恢复默认背景'); };
+
+/* ================= 资料保存 ================= */
+$('saveProfile').onclick = ()=>{
+  const nick = $('fNick').value.trim();
+  if(!nick){ toast('昵称不能为空'); $('fNick').focus(); return; }
+  profile.nickname = nick;
+  profile.desc     = $('fDesc').value.trim();
+  profile.gender   = $('fGender').value;
+  profile.birthday = $('fBirth').value;
+  profile.city     = $('fCity').value.trim();
+  profile.email    = $('fMail').value.trim();
+  save(); applyProfile(); toast('资料已保存');
+};
+$('resetProfile').onclick = ()=>{
+  profile = Object.assign({}, DEFAULT_PROFILE, {fav:profile.fav, playCount:profile.playCount});
+  save(); applyAll(); renderList($('search').value.trim()); renderFav(); toast('已恢复默认资料');
+};
+
+/* ================= 视图切换 ================= */
+function showView(name){
+  [...document.querySelectorAll('.view')].forEach(v=>v.classList.remove('active'));
+  const map = {home:'view-home', fav:'view-fav', profile:'view-profile', theme:'view-theme'};
+  $(map[name]).classList.add('active');
+  [...document.querySelectorAll('.nav-item[data-view]')].forEach(n=>n.classList.toggle('active', n.dataset.view === name));
+}
+document.querySelectorAll('.nav-item[data-view]').forEach(n=>{
+  n.onclick = ()=>{
+    if(n.dataset.view === 'vip'){ toast('演示版本未接入支付'); return; }
+    showView(n.dataset.view);
+  };
+});
+$('topAva').onclick = ()=>showView('profile');
+$('topNick').onclick = ()=>showView('profile');
+
+/* ================= 歌曲数据 ================= */
+const palette = [
+  ["#1ec8ff","#7b5cff"],["#ff8a5b","#ff5b8a"],["#22d3a6","#1e8bff"],
+  ["#f6c453","#ff7e5f"],["#a06bff","#ff6bcb"],["#3ad1ff","#2e6cff"],
+  ["#ff5b8a","#ffb15b"],["#5be0a0","#1ec8ff"]
+];
+function coverStyle(i){ const c = palette[i % palette.length]; return 'background:linear-gradient(135deg,' + c[0] + ',' + c[1] + ')'; }
+const songs = [
+  {title:"夜空中的回响", artist:"林夕遥", album:"星河漫游", src:"https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", dur:234},
+  {title:"潮汐之间",     artist:"苏野",   album:"蓝色海岸线", src:"https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3", dur:286},
+  {title:"霓虹城市",     artist:"电音少年", album:"午夜频率", src:"https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3", dur:254},
+  {title:"风的形状",     artist:"陈漫",   album:"山与海",   src:"https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3", dur:297},
+  {title:"旧时光信笺",   artist:"温开水", album:"回忆博物馆", src:"https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3", dur:312},
+  {title:"银河便利店",   artist:"小宇",   album:"宇宙夜市", src:"https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3", dur:268},
+  {title:"雨后初晴",     artist:"白鹭",   album:"清新时刻", src:"https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3", dur:241},
+  {title:"追光者",       artist:"晨曦乐队", album:"在路上", src:"https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3", dur:263}
+];
+
+const audio = $('audio');
+let current = -1, playing = false, mode = 0; // 0 顺序 1 随机 2 单曲
+const modeNames = ["顺序","随机","单曲"];
+function fmt(s){ s = Math.floor(s || 0); return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); }
+const isFav = i => profile.fav.indexOf(i) > -1;
+
+function rowHTML(s, i, pos){
+  return '<div class="idx">' + (i === current && playing ? '🎵' : String(pos).padStart(2,'0')) + '</div>' +
+    '<div class="title-cell"><div class="cover" style="' + coverStyle(i) + '"></div>' +
+    '<div class="meta"><div class="title">' + s.title + '</div></div></div>' +
+    '<div class="artist">' + s.artist + '</div>' +
+    '<div class="album">' + s.album + '</div>' +
+    '<div class="dur">' + fmt(s.dur) + '</div>' +
+    '<div class="heart' + (isFav(i) ? ' on' : '') + '" data-fav="' + i + '">' + (isFav(i) ? '♥' : '♡') + '</div>';
+}
+function renderList(filter){
+  const box = $('songs'); box.innerHTML = '';
+  let pos = 0, hit = 0;
+  songs.forEach((s,i)=>{
+    if(filter && !(s.title.indexOf(filter)>-1 || s.artist.indexOf(filter)>-1 || s.album.indexOf(filter)>-1)) return;
+    pos++; hit++;
+    const row = document.createElement('div');
+    row.className = 'sl-row' + (i === current ? ' playing' : '');
+    row.innerHTML = rowHTML(s, i, pos);
+    row.onclick = e => {
+      const h = e.target.closest('.heart');
+      if(h){ toggleFav(i); return; }
+      play(i);
+    };
+    box.appendChild(row);
+  });
+  if(!hit) box.innerHTML = '<div class="empty">没有找到匹配的歌曲</div>';
+}
+function renderFav(){
+  const box = $('favList'); box.innerHTML = '';
+  $('favCount').textContent = profile.fav.length;
+  if(!profile.fav.length){ box.innerHTML = '<div class="empty">还没有收藏歌曲，去推荐页点个小爱心吧 ♡</div>'; return; }
+  profile.fav.forEach((i,n)=>{
+    const s = songs[i];
+    const row = document.createElement('div');
+    row.className = 'sl-row' + (i === current ? ' playing' : '');
+    row.innerHTML = rowHTML(s, i, n+1);
+    row.onclick = e => {
+      const h = e.target.closest('.heart');
+      if(h){ toggleFav(i); return; }
+      play(i);
+    };
+    box.appendChild(row);
+  });
+}
+function toggleFav(i){
+  const k = profile.fav.indexOf(i);
+  if(k > -1){ profile.fav.splice(k,1); toast('已取消收藏'); }
+  else { profile.fav.push(i); toast('已加入我喜欢的音乐'); }
+  save(); applyProfile(); syncLikeBtn();
+  renderList($('search').value.trim()); renderFav();
+}
+function syncLikeBtn(){
+  const l = $('npLike');
+  if(current < 0){ l.textContent = '♡'; l.classList.remove('on'); return; }
+  l.textContent = isFav(current) ? '♥' : '♡';
+  l.classList.toggle('on', isFav(current));
+}
+
+function loadMeta(i){
+  const s = songs[i];
+  $('pTitle').textContent = s.title;
+  $('pArtist').textContent = s.artist;
+  $('npTitle').textContent = s.title;
+  $('npArtist').textContent = s.artist;
+  $('pCover').style.cssText = coverStyle(i);
+  $('npCover').style.cssText = coverStyle(i);
+  $('dur').textContent = fmt(s.dur);
+  const words = ['夜色铺开一条长长的河','我把心事折成纸船','让它顺着旋律漂远','副歌升起的时候','整座城市都亮了起来','间奏像雨后的风','轻轻推开窗','尾声慢慢落下来','留在你耳边的温度'];
+  $('lyrics').innerHTML = words.map((w,k)=>'<div class="ln" data-t="' + (k*7) + '">' + w + '</div>').join('');
+  syncLikeBtn();
+}
+function play(i){
+  current = i;
+  loadMeta(i);
+  profile.playCount++; save(); applyProfile();
+  audio.src = songs[i].src;
+  const p = audio.play();
+  if(p && p.then) p.then(()=>setPlaying(true)).catch(()=>{ setPlaying(true); toast('音频加载中，请稍候…'); });
+  else setPlaying(true);
+  renderList($('search').value.trim()); renderFav();
+}
+function setPlaying(p){
+  playing = p;
+  $('toggle').textContent = p ? '⏸' : '▶';
+  $('disc').classList.toggle('playing', p);
+  renderList($('search').value.trim());
+}
+function next(){
+  if(current < 0){ play(0); return; }
+  if(mode === 2){ audio.currentTime = 0; audio.play(); return; }
+  let i = mode === 1 ? Math.floor(Math.random()*songs.length) : (current+1) % songs.length;
+  play(i);
+}
+function prev(){ if(current < 0){ play(0); return; } play((current - 1 + songs.length) % songs.length); }
+
+$('toggle').onclick = ()=>{
+  if(current < 0){ play(0); return; }
+  if(playing){ audio.pause(); setPlaying(false); } else { audio.play(); setPlaying(true); }
+};
+$('next').onclick = next;
+$('npNext').onclick = next;
+$('prev').onclick = prev;
+$('npPrev').onclick = prev;
+$('npLike').onclick = ()=>{ if(current >= 0) toggleFav(current); };
+$('playHero').onclick = ()=>play(0);
+$('playFav').onclick = ()=>{ if(profile.fav.length) play(profile.fav[0]); else toast('先收藏几首歌吧'); };
+$('shuffleAll').onclick = ()=>{ mode = 1; $('mode').textContent = modeNames[mode]; play(Math.floor(Math.random()*songs.length)); };
+$('mode').onclick = ()=>{ mode = (mode+1)%3; $('mode').textContent = modeNames[mode]; toast('播放模式：' + modeNames[mode]); };
+
+audio.ontimeupdate = ()=>{
+  const p = audio.currentTime / audio.duration;
+  if(isFinite(p)){ $('seekFill').style.width = (p*100) + '%'; $('seekKnob').style.left = (p*100) + '%'; }
+  $('cur').textContent = fmt(audio.currentTime);
+  const lines = [...$('lyrics').children];
+  let act = null;
+  lines.forEach(l=>{
+    if(audio.currentTime >= (+l.dataset.t)) { l.classList.add('active'); act = l; }
+    else l.classList.remove('active');
+  });
+  if(act){
+    const box = $('lyrics');
+    const top = act.offsetTop - box.clientHeight/2 + act.clientHeight/2;
+    if(Math.abs(box.scrollTop - top) > 24) box.scrollTop = top;
+  }
+};
+audio.onended = ()=>{ if(mode !== 2) next(); else { audio.currentTime = 0; audio.play(); } };
+audio.onerror = ()=>{ if(current >= 0) toast('音频加载失败，请检查网络连接'); };
+
+function seekFrom(e, bar){
+  if(!audio.duration) return;
+  const r = bar.getBoundingClientRect();
+  const ratio = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+  audio.currentTime = ratio * audio.duration;
+}
+$('seek').onclick = e => seekFrom(e, $('seek'));
+$('vol').onclick = e => {
+  const r = $('vol').getBoundingClientRect();
+  const ratio = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+  audio.volume = ratio;
+  $('volFill').style.width = (ratio*100) + '%';
+  $('volKnob').style.left = (ratio*100) + '%';
+};
+audio.volume = 0.7;
+$('search').oninput = e => renderList(e.target.value.trim());
+
+/* ================= 启动 ================= */
+applyAll();
+renderList();
+renderFav();
+try{ if(sessionStorage.getItem('kg_logged') === '1') enterApp(); }catch(e){}
+</script>
+</body>
+</html>
