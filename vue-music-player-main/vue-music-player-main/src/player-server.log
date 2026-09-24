@@ -1,0 +1,36 @@
+
+> vue-music-player@1.0.0 dev
+> vite
+
+
+  [32m[1mVITE[22m v6.4.3[39m  [2mready in [0m[1m423[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m
+[2m  [32m➜[39m  [1mNetwork[22m[2m: use [22m[1m--host[22m[2m to expose[22m
+[2m[32m  ➜[39m[22m[2m  press [22m[1mh + enter[22m[2m to show help[22m
+^C
+> vue-music-player@1.0.0 dev
+> vite
+
+
+  [32m[1mVITE[22m v6.4.3[39m  [2mready in [0m[1m479[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m
+[2m  [32m➜[39m  [1mNetwork[22m[2m: use [22m[1m--host[22m[2m to expose[22m
+[2m[32m  ➜[39m[22m[2m  press [22m[1mh + enter[22m[2m to show help[22m
+[2m14:17:05[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.vue, /src/components/TopBar.vue, /src/components/FavView.vue, /src/components/LoginPage.vue, /src/components/HomeView.vue, /src/components/SideBar.vue, /src/components/ProfileView.vue, /src/components/ThemeView.vue, /src/components/NowPlaying.vue, /src/components/PlayerBar.vue, /src/components/Toast.vue, /src/components/SongList.vue[22m
+[2m14:17:08[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.vue, /src/components/TopBar.vue, /src/components/FavView.vue, /src/components/LoginPage.vue, /src/components/HomeView.vue, /src/components/SideBar.vue, /src/components/ProfileView.vue, /src/components/ThemeView.vue, /src/components/NowPlaying.vue, /src/components/PlayerBar.vue, /src/components/Toast.vue, /src/components/SongList.vue[22m
+[2m14:17:13[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.vue, /src/components/TopBar.vue, /src/components/FavView.vue, /src/components/LoginPage.vue, /src/components/HomeView.vue, /src/components/SideBar.vue, /src/components/ProfileView.vue, /src/components/ThemeView.vue, /src/components/NowPlaying.vue, /src/components/PlayerBar.vue, /src/components/Toast.vue, /src/components/SongList.vue[22m
+[2m14:17:17[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/LoginPage.vue[22m
+[2m14:17:21[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.vue[22m
+[2m14:17:24[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.vue[22m
+[2m14:17:24[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/main.js[22m
+[2m14:17:28[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/RegisterPage.vue[22m
+[2m14:41:43[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/LoginPage.vue[22m
+[2m14:41:48[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.vue, /src/components/TopBar.vue, /src/components/FavView.vue, /src/components/LoginPage.vue, /src/components/HomeView.vue, /src/components/SideBar.vue, /src/components/ProfileView.vue, /src/components/ThemeView.vue, /src/components/NowPlaying.vue, /src/components/PlayerBar.vue, /src/components/Toast.vue, /src/components/SongList.vue, /src/components/RegisterPage.vue[22m
+[2m14:41:54[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.vue, /src/components/TopBar.vue, /src/components/FavView.vue, /src/components/LoginPage.vue, /src/components/HomeView.vue, /src/components/SideBar.vue, /src/components/ProfileView.vue, /src/components/ThemeView.vue, /src/components/NowPlaying.vue, /src/components/PlayerBar.vue, /src/components/Toast.vue, /src/components/SongList.vue, /src/components/RegisterPage.vue[22m
+[2m14:42:05[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/login.css[22m
+[2m14:42:09[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/login.css[22m
+[2m14:42:13[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/register.css[22m
+[2m14:42:27[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProfileView.vue[22m
+[2m14:42:34[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProfileView.vue[22m
